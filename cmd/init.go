@@ -36,7 +36,9 @@ var (
 			return comps, directive
 		},
 		Run: func(_ *cobra.Command, args []string) {
-			projectPath, err := initializeProject(args)
+			path, err := GetPath(args)
+			cobra.CheckErr(err)
+			projectPath, err := initializeProject(path)
 			cobra.CheckErr(err)
 			fmt.Printf("Your application is ready at: %s\n", projectPath)
 		},
@@ -50,7 +52,8 @@ func init() {
 	viper.BindPFlag("force", rootCmd.PersistentFlags().Lookup("force"))
 }
 
-func initializeProject(args []string) (string, error) {
+func GetPath(args []string) (string, error) {
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -61,13 +64,17 @@ func initializeProject(args []string) (string, error) {
 			wd = fmt.Sprintf("%s/%s", wd, args[0])
 		}
 	}
+	return wd, err
+}
 
-	modName := getModImportPath()
+func initializeProject(dir string) (string, error) {
+
+	pkgName := getModImportPath()
 
 	project := &gen.Project{
-		AbsolutePath: wd,
-		PkgName:      modName,
-		AppName:      path.Base(modName),
+		AbsolutePath: dir,
+		PkgName:      pkgName,
+		AppName:      path.Base(pkgName),
 	}
 
 	if err := project.Create(); err != nil {
